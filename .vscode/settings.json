@@ -1,0 +1,11 @@
+{
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "TRACKING\\\\TASK_DONE\\.txt$",
+        "cmd": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}\\\\scripts\\\\notify-telegram.ps1\""
+      }
+    ]
+  }
+}
+
