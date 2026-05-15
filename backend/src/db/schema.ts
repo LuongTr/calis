@@ -18,6 +18,7 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     passwordHash: text("password_hash").notNull(),
     displayName: text("display_name"),
+    preferredVariants: jsonb("preferred_variants").notNull().default(sql`'{}'::jsonb`),
     level: text("level").notNull().default("beginner"),
     trainingStyle: text("training_style").notNull().default("full_body"),
     mobilityLevel: text("mobility_level").notNull().default("normal"),
@@ -42,6 +43,10 @@ export const exercises = pgTable(
   "exercises",
   {
     id: text("id").primaryKey(),
+    familyId: text("family_id"),
+    difficultyRank: integer("difficulty_rank"),
+    progressionExerciseId: text("progression_exercise_id"),
+    regressionExerciseId: text("regression_exercise_id"),
     name: text("name").notNull(),
     type: text("type").notNull().default("calis"),
     muscleGroup: text("muscle_group"),
@@ -80,7 +85,7 @@ export const workoutTemplates = pgTable(
   },
   (t) => [
     check("workout_templates_level_check", sql`${t.level} in ('beginner', 'intermediate')`),
-    check("workout_templates_type_check", sql`${t.type} in ('full_body', 'upper', 'lower', 'mobility')`)
+    check("workout_templates_type_check", sql`${t.type} in ('full_body', 'upper', 'lower', 'push', 'pull', 'legs', 'mobility')`)
   ]
 );
 

@@ -1,5 +1,5 @@
 import { Exercise, OnboardingData, Recommendation, UserProfile, WorkoutHistoryEntry, WorkoutTemplate } from '../types';
-import { apiRequest, isApiConfigured } from './api-client';
+import { apiRequest, isApiConfigured, isBackendStrictMode } from './api-client';
 import { BackendUser, mapBackendUserToProfile } from './auth';
 import {
   appendWorkoutHistoryEntry,
@@ -15,9 +15,23 @@ import { WORKOUT_TEMPLATES as LOCAL_TEMPLATES, getWorkoutById as localGetWorkout
 let cachedExercises: Exercise[] | null = null;
 let cachedTemplates: WorkoutTemplate[] | null = null;
 
+function mergeExercises(base: Exercise[], fallback: Exercise[]): Exercise[] {
+  const merged = [...base];
+  for (const exercise of fallback) {
+    if (!merged.find((item) => item.id === exercise.id)) {
+      merged.push(exercise);
+    }
+  }
+  return merged;
+}
+
 function mapRowToExercise(row: any): Exercise {
   return {
     id: row.id,
+    familyId: row.familyId ?? row.family_id,
+    difficultyRank: row.difficultyRank ?? row.difficulty_rank,
+    progressionExerciseId: row.progressionExerciseId ?? row.progression_exercise_id,
+    regressionExerciseId: row.regressionExerciseId ?? row.regression_exercise_id,
     name: row.name,
     type: row.type || 'calis',
     muscleGroup: row.muscleGroup || row.muscle_group,
@@ -75,13 +89,19 @@ export async function fetchExercises(): Promise<Exercise[]> {
   if (cachedExercises) return cachedExercises;
 
   try {
-    const data = await apiRequest<any[]>('/exercises');
-    if (data.length > 0) {
-      cachedExercises = data.map(mapRowToExercise);
+    const data = await apiRequest<any[] | ExercisesResponse>('/exercises');
+    const rows = Array.isArray(data) ? data : data.exercises;
+    if (rows.length > 0) {
+      cachedExercises = isBackendStrictMode()
+        ? rows.map(mapRowToExercise)
+        : mergeExercises(rows.map(mapRowToExercise), LOCAL_EXERCISES);
       return cachedExercises;
     }
   } catch (error) {
-    console.warn('Failed to fetch exercises from backend, using local data:', error);
+    console.warn('Failed to fetch exercises from backend:', error);
+    if (isBackendStrictMode()) {
+      throw error;
+    }
   }
 
   return LOCAL_EXERCISES;
@@ -93,14 +113,21 @@ export async function getExerciseById(id: string): Promise<Exercise | undefined>
   }
 
   if (cachedExercises) {
-    return cachedExercises.find((exercise) => exercise.id === id);
+    return (
+      cachedExercises.find((exercise) => exercise.id === id) ||
+      localGetExerciseById(id)
+    );
   }
 
   try {
-    const data = await apiRequest<any>(`/exercises/${id}`);
-    return mapRowToExercise(data);
+    const data = await apiRequest<any | ExerciseResponse>(`/exercises/${id}`);
+    const row = typeof data === 'object' && data && 'exercise' in data ? data.exercise : data;
+    return mapRowToExercise(row);
   } catch (error) {
-    console.warn('Failed to fetch exercise from backend, using local data:', error);
+    console.warn('Failed to fetch exercise from backend:', error);
+    if (isBackendStrictMode()) {
+      throw error;
+    }
   }
 
   return localGetExerciseById(id);
@@ -108,9 +135,15 @@ export async function getExerciseById(id: string): Promise<Exercise | undefined>
 
 export function getCachedExerciseById(id: string): Exercise | undefined {
   if (cachedExercises) {
-    return cachedExercises.find((exercise) => exercise.id === id);
+    const matched = cachedExercises.find((exercise) => exercise.id === id);
+    if (matched) return matched;
+    if (isBackendStrictMode()) return undefined;
+    return localGetExerciseById(id);
   }
 
+  if (isApiConfigured() && isBackendStrictMode()) {
+    return undefined;
+  }
   return localGetExerciseById(id);
 }
 
@@ -126,16 +159,20 @@ export async function fetchTemplates(): Promise<WorkoutTemplate[]> {
   if (cachedTemplates) return cachedTemplates;
 
   try {
-    const data = await apiRequest<any[]>('/workouts');
-    if (data.length > 0) {
-      cachedTemplates = mergeTemplates(
-        mergeTemplates(LOCAL_TEMPLATES, data.map(mapRowToTemplate)),
-        customWorkouts
-      );
+    const data = await apiRequest<any[] | WorkoutsResponse>('/workouts');
+    const rows = Array.isArray(data) ? data : data.workouts;
+    if (rows.length > 0) {
+      const baseTemplates = isBackendStrictMode()
+        ? rows.map(mapRowToTemplate)
+        : mergeTemplates(LOCAL_TEMPLATES, rows.map(mapRowToTemplate));
+      cachedTemplates = mergeTemplates(baseTemplates, customWorkouts);
       return cachedTemplates;
     }
   } catch (error) {
-    console.warn('Failed to fetch templates from backend, using local data:', error);
+    console.warn('Failed to fetch templates from backend:', error);
+    if (isBackendStrictMode()) {
+      throw error;
+    }
   }
 
   const mergedLocal = mergeTemplates(LOCAL_TEMPLATES, customWorkouts);
@@ -155,10 +192,14 @@ export async function getWorkoutById(id: string): Promise<WorkoutTemplate | unde
   }
 
   try {
-    const data = await apiRequest<any>(`/workouts/${id}`);
-    return mapRowToTemplate(data);
+    const data = await apiRequest<any | WorkoutResponse>(`/workouts/${id}`);
+    const row = typeof data === 'object' && data && 'workout' in data ? data.workout : data;
+    return mapRowToTemplate(row);
   } catch (error) {
-    console.warn('Failed to fetch workout template from backend, using local data:', error);
+    console.warn('Failed to fetch workout template from backend:', error);
+    if (isBackendStrictMode()) {
+      throw error;
+    }
   }
 
   return customWorkouts.find((template) => template.id === id) || localGetWorkoutById(id);
@@ -169,6 +210,9 @@ export function getCachedWorkoutById(id: string): WorkoutTemplate | undefined {
     return cachedTemplates.find((template) => template.id === id);
   }
 
+  if (isApiConfigured() && isBackendStrictMode()) {
+    return undefined;
+  }
   return localGetWorkoutById(id);
 }
 
@@ -185,6 +229,7 @@ export async function initializeData(): Promise<{
 }
 
 interface RecommendationsResponse {
+  contentVersion?: string;
   recommendations: Array<{
     workout: any;
     score: number;
@@ -192,7 +237,31 @@ interface RecommendationsResponse {
   }>;
 }
 
+interface ExercisesResponse {
+  contentVersion?: string;
+  exercises: any[];
+}
+
+interface ExerciseResponse {
+  contentVersion?: string;
+  exercise: any;
+}
+
+interface WorkoutsResponse {
+  contentVersion?: string;
+  workouts: any[];
+}
+
+interface WorkoutResponse {
+  contentVersion?: string;
+  workout: any;
+}
+
 interface OnboardingSubmitResponse {
+  user: BackendUser;
+}
+
+interface ProfilePatchResponse {
   user: BackendUser;
 }
 
@@ -227,6 +296,22 @@ export async function submitOnboarding(data: OnboardingData): Promise<UserProfil
       squatLevel: data.squatLevel,
       mobilityLevel: data.mobilityLevel,
     }),
+  });
+
+  return mapBackendUserToProfile(response.user);
+}
+
+export async function updatePreferredVariants(
+  preferredVariants: Record<string, string>
+): Promise<UserProfile | null> {
+  if (!isApiConfigured()) {
+    return null;
+  }
+
+  const response = await apiRequest<ProfilePatchResponse>('/me', {
+    method: 'PATCH',
+    auth: true,
+    body: JSON.stringify({ preferredVariants }),
   });
 
   return mapBackendUserToProfile(response.user);

@@ -166,33 +166,10 @@ export default function HomeScreen({
           </View>
         )}
 
-        {(primaryRec || recentWorkoutTitle) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick actions</Text>
-            <View style={styles.quickActions}>
-              {primaryRec ? (
-                <TouchableOpacity
-                  style={styles.quickActionCard}
-                  onPress={() => onStartWorkout(primaryRec.workout.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickActionLabel}>Today</Text>
-                  <Text style={styles.quickActionTitle}>{primaryRec.workout.title}</Text>
-                </TouchableOpacity>
-              ) : null}
-              {recentWorkoutTitle && onRepeatLastWorkout ? (
-                <TouchableOpacity
-                  style={styles.quickActionCard}
-                  onPress={onRepeatLastWorkout}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickActionLabel}>Train again</Text>
-                  <Text style={styles.quickActionTitle}>{recentWorkoutTitle}</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-        )}
+        {/*
+          Quick actions section intentionally hidden on Home screen.
+          Keep code removed to avoid rendering while retaining styles for potential reuse.
+        */}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recommended for you</Text>

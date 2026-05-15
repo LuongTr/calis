@@ -27,6 +27,7 @@ export interface UserProfile {
   authMode: AuthMode;
   email?: string;
   displayName?: string;
+  preferredVariants?: Record<string, string>;
   onboardingCompleted: boolean;
   onboardingData?: OnboardingData;
   lastWorkoutType?: WorkoutType;
@@ -46,6 +47,10 @@ export type ExerciseLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export interface Exercise {
   id: string;
+  familyId?: string;
+  difficultyRank?: number;
+  progressionExerciseId?: string;
+  regressionExerciseId?: string;
   name: string;
   type: ExerciseType;
   muscleGroup: MuscleGroup;

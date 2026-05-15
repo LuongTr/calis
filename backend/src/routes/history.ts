@@ -44,7 +44,7 @@ historyRouter.post("/history", requireAuth, async (req, res, next) => {
       .insert(workoutHistory)
       .values({
         userId: req.auth!.userId,
-        workoutId: payload.workoutId,
+        workoutId: workoutTemplate?.id ?? null,
         completedAt: payload.completedAt ? new Date(payload.completedAt) : undefined,
         totalSets: payload.totalSets,
         durationSeconds: payload.durationSeconds,
@@ -63,7 +63,8 @@ historyRouter.post("/history", requireAuth, async (req, res, next) => {
 
     console.log("history.completed", {
       userId: req.auth!.userId,
-      workoutId: payload.workoutId,
+      workoutId: workoutTemplate?.id ?? null,
+      requestedWorkoutId: payload.workoutId,
       workoutType: workoutTemplate?.type ?? null,
       totalSets: payload.totalSets
     });

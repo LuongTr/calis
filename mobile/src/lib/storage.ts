@@ -21,6 +21,7 @@ function normalizeUserProfile(profile: Partial<UserProfile> | null): UserProfile
       (typeof profile.id === 'string' && profile.id.startsWith('user-') ? 'guest' : 'account'),
     email: profile.email,
     displayName: profile.displayName,
+    preferredVariants: profile.preferredVariants || {},
     onboardingCompleted: Boolean(profile.onboardingCompleted),
     onboardingData: profile.onboardingData,
     lastWorkoutType: profile.lastWorkoutType,

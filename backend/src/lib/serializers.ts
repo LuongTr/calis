@@ -4,6 +4,7 @@ export function toAuthUser(row: {
   id: string;
   email: string;
   displayName: string | null;
+  preferredVariants: unknown;
   onboardingCompleted: boolean;
   level: string;
   trainingStyle: string;
@@ -21,6 +22,10 @@ export function toAuthUser(row: {
     id: row.id,
     email: row.email,
     displayName: row.displayName,
+    preferredVariants:
+      row.preferredVariants && typeof row.preferredVariants === "object"
+        ? (row.preferredVariants as Record<string, string>)
+        : {},
     onboardingCompleted: row.onboardingCompleted,
     level: row.level as AuthUser["level"],
     trainingStyle: row.trainingStyle as AuthUser["trainingStyle"],

@@ -2,13 +2,14 @@ import { Router } from "express";
 import { asc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { workoutTemplates } from "../db/schema.js";
+import { CONTENT_VERSION } from "../lib/content.js";
 
 export const workoutsRouter = Router();
 
 workoutsRouter.get("/", async (_req, res, next) => {
   try {
     const rows = await db.select().from(workoutTemplates).orderBy(asc(workoutTemplates.id));
-    res.json(rows);
+    res.json({ contentVersion: CONTENT_VERSION, workouts: rows });
   } catch (error) {
     next(error);
   }
@@ -23,7 +24,7 @@ workoutsRouter.get("/:id", async (req, res, next) => {
       res.status(404).json({ error: "Workout template not found" });
       return;
     }
-    res.json(row);
+    res.json({ contentVersion: CONTENT_VERSION, workout: row });
   } catch (error) {
     next(error);
   }

@@ -100,9 +100,6 @@ export default function WorkoutDetailScreen({ workout, onStart, onBack }: Props)
               <Text style={styles.tagText}>{workout.type.replace('_', ' ')}</Text>
             </View>
           </View>
-          <Text style={styles.summaryText}>
-            {workout.exerciseBlocks.length} exercises planned. Start from the top and move through each section in order.
-          </Text>
         </View>
 
         {orderedSections.map((sectionKey) => {
@@ -123,9 +120,6 @@ export default function WorkoutDetailScreen({ workout, onStart, onBack }: Props)
                     <View style={styles.exerciseInfo}>
                       <Text style={styles.exerciseName}>{exercise?.name || block.exerciseId}</Text>
                       <Text style={styles.exerciseDetails}>{formatExerciseDetails(block)}</Text>
-                      {exercise?.shortDescription ? (
-                        <Text style={styles.exerciseDescription}>{exercise.shortDescription}</Text>
-                      ) : null}
                     </View>
                   </View>
                 ))}
@@ -197,12 +191,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textTransform: 'capitalize',
   },
-  summaryText: {
-    marginTop: SPACING.md,
-    fontSize: FONTS.bodySmall,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-  },
   section: {
     marginBottom: SPACING.lg,
   },
@@ -252,12 +240,6 @@ const styles = StyleSheet.create({
     fontSize: FONTS.caption,
     color: COLORS.textSecondary,
     marginTop: 2,
-  },
-  exerciseDescription: {
-    fontSize: FONTS.bodySmall,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs,
-    lineHeight: 20,
   },
   startButton: {
     backgroundColor: COLORS.primary,

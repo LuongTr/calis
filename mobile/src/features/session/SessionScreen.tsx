@@ -14,44 +14,82 @@ import {
   processTransition,
 } from './sessionMachine';
 import { getCachedExerciseById } from '../../lib/api';
+import { getAdjacentVariant, getExerciseVariants } from '../../data/exercises';
 import YouTubeVideo from '../../components/YouTubeVideo';
+import CircularProgress from '../../components/CircularProgress';
 import RestScreen from './RestScreen';
 import CompleteScreen from './CompleteScreen';
 
 interface Props {
   workout: WorkoutTemplate;
+  preferredVariants: Record<string, string>;
+  onPersistVariant: (familyId: string, exerciseId: string) => void;
   onComplete: (workoutId: string) => void;
   onExit: () => void;
 }
 
-export default function SessionScreen({ workout, onComplete, onExit }: Props) {
-  const [state, dispatch] = useState<SessionState>(() =>
+export default function SessionScreen({
+  workout,
+  preferredVariants,
+  onPersistVariant,
+  onComplete,
+  onExit,
+}: Props) {
+  const [state, setState] = useState<SessionState>(() =>
     createInitialSessionState(workout)
   );
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeSetTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initializedWorkoutIdRef = useRef<string | null>(null);
+  const [variantByExerciseIndex, setVariantByExerciseIndex] = useState<Record<number, string>>({});
+  const [setSecondsRemaining, setSetSecondsRemaining] = useState<number | null>(null);
 
   const currentExercise = workout.exerciseBlocks[state.currentExerciseIndex];
-  const exercise = currentExercise ? getCachedExerciseById(currentExercise.exerciseId) : null;
+  const selectedExerciseId =
+    currentExercise &&
+    (variantByExerciseIndex[state.currentExerciseIndex] || currentExercise.exerciseId);
+  const exercise = selectedExerciseId ? getCachedExerciseById(selectedExerciseId) : null;
+  const isTimeBasedSet = Boolean(currentExercise?.timeSec);
+  const totalSetSeconds = currentExercise?.timeSec ?? 0;
+
+  useEffect(() => {
+    if (initializedWorkoutIdRef.current === workout.id) {
+      return;
+    }
+    const next: Record<number, string> = {};
+    workout.exerciseBlocks.forEach((block, index) => {
+      const baseExercise = getCachedExerciseById(block.exerciseId);
+      const familyId = baseExercise?.familyId;
+      if (!familyId) return;
+      const preferred = preferredVariants[familyId];
+      if (preferred) {
+        const preferredExercise = getCachedExerciseById(preferred);
+        if (preferredExercise?.familyId === familyId) {
+          next[index] = preferred;
+        }
+      }
+    });
+    initializedWorkoutIdRef.current = workout.id;
+    setVariantByExerciseIndex(next);
+  }, [preferredVariants, workout]);
 
   // Process transition whenever state enters 'transition'
   useEffect(() => {
     if (state.status === 'transition') {
       const newState = processTransition(state, workout);
-      // Update state immediately (force a microtask)
       const id = setTimeout(() => {
-        dispatch(newState);
+        setState(newState);
       }, 0);
       return () => clearTimeout(id);
     }
-  }, [state.status]);
+  }, [state, workout]);
 
   // Handle rest timer
   useEffect(() => {
     if (state.status === 'rest') {
-      timerRef.current = setInterval(() => {
-        dispatch((prev) => {
+      restTimerRef.current = setInterval(() => {
+        setState((prev) => {
           if (prev.restSeconds <= 0) {
-            // Timer done
             return sessionReducer(prev, { type: 'TIMER_DONE' });
           }
           return { ...prev, restSeconds: prev.restSeconds - 1 };
@@ -59,23 +97,79 @@ export default function SessionScreen({ workout, onComplete, onExit }: Props) {
       }, 1000);
     }
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      if (restTimerRef.current) {
+        clearInterval(restTimerRef.current);
+        restTimerRef.current = null;
       }
     };
   }, [state.status]);
 
+  // Handle active set timer for time-based exercises (auto finish, no done button)
+  useEffect(() => {
+    if (state.status !== 'active_set' || !isTimeBasedSet || totalSetSeconds <= 0) {
+      if (activeSetTimerRef.current) {
+        clearInterval(activeSetTimerRef.current);
+        activeSetTimerRef.current = null;
+      }
+      setSetSecondsRemaining(null);
+      return;
+    }
+
+    setSetSecondsRemaining(totalSetSeconds);
+    activeSetTimerRef.current = setInterval(() => {
+      setSetSecondsRemaining((prev) => {
+        if (prev === null) return totalSetSeconds;
+        if (prev <= 1) {
+          setState((current) => sessionReducer(current, { type: 'DONE' }));
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (activeSetTimerRef.current) {
+        clearInterval(activeSetTimerRef.current);
+        activeSetTimerRef.current = null;
+      }
+    };
+  }, [state.status, state.currentExerciseIndex, state.currentSetIndex, isTimeBasedSet, totalSetSeconds]);
+
   const handleDone = useCallback(() => {
-    dispatch((prev) => sessionReducer(prev, { type: 'DONE' }));
+    setState((prev) => sessionReducer(prev, { type: 'DONE' }));
   }, []);
 
+  const handleSkipTimeSet = useCallback(() => {
+    setState((prev) => sessionReducer(prev, { type: 'DONE' }));
+  }, []);
+
+  const handleSwitchVariant = useCallback(
+    (direction: 'easier' | 'harder') => {
+      if (!selectedExerciseId) return;
+      const current = getCachedExerciseById(selectedExerciseId);
+      const linkedTargetId =
+        direction === 'easier' ? current?.regressionExerciseId : current?.progressionExerciseId;
+      const linkedTarget = linkedTargetId ? getCachedExerciseById(linkedTargetId) : null;
+      const target = linkedTarget || getAdjacentVariant(selectedExerciseId, direction);
+      if (!target) return;
+
+      setVariantByExerciseIndex((prev) => ({
+        ...prev,
+        [state.currentExerciseIndex]: target.id,
+      }));
+      if (target.familyId) {
+        onPersistVariant(target.familyId, target.id);
+      }
+    },
+    [onPersistVariant, selectedExerciseId, state.currentExerciseIndex]
+  );
+
   const handleSkip = useCallback(() => {
-    dispatch((prev) => sessionReducer(prev, { type: 'SKIP' }));
+    setState((prev) => sessionReducer(prev, { type: 'SKIP' }));
   }, []);
 
   const handleAdjustRest = useCallback((adjustment: number) => {
-    dispatch((prev) =>
+    setState((prev) =>
       sessionReducer(prev, { type: 'ADJUST_REST', payload: adjustment })
     );
   }, []);
@@ -97,7 +191,7 @@ export default function SessionScreen({ workout, onComplete, onExit }: Props) {
           <Text style={styles.readyText}>Ready to begin?</Text>
           <TouchableOpacity
             style={styles.startButton}
-            onPress={() => dispatch(sessionReducer(state, { type: 'START_WORKOUT' }))}
+            onPress={() => setState((prev) => sessionReducer(prev, { type: 'START_WORKOUT' }))}
           >
             <Text style={styles.startButtonText}>Begin Workout</Text>
           </TouchableOpacity>
@@ -111,6 +205,20 @@ export default function SessionScreen({ workout, onComplete, onExit }: Props) {
 
   // ACTIVE SET state
   if (state.status === 'active_set') {
+    const variants = selectedExerciseId ? getExerciseVariants(selectedExerciseId) : [];
+    const currentVariantIndex = variants.findIndex((item) => item.id === selectedExerciseId);
+    const canGoEasier =
+      Boolean(exercise?.regressionExerciseId) || currentVariantIndex > 0;
+    const canGoHarder =
+      Boolean(exercise?.progressionExerciseId) ||
+      (currentVariantIndex >= 0 && currentVariantIndex < variants.length - 1);
+    const hasVariantSystem =
+      variants.length > 1 || Boolean(exercise?.progressionExerciseId || exercise?.regressionExerciseId);
+    const timerProgress =
+      isTimeBasedSet && totalSetSeconds > 0 && setSecondsRemaining !== null
+        ? 1 - Math.min(setSecondsRemaining / totalSetSeconds, 1)
+        : 0;
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.activeContent}>
@@ -143,12 +251,58 @@ export default function SessionScreen({ workout, onComplete, onExit }: Props) {
                 ? `${currentExercise.timeSec}s`
                 : ''}
             </Text>
+            {hasVariantSystem ? (
+              <View style={styles.variantControls}>
+                <TouchableOpacity
+                  style={[styles.variantButton, !canGoEasier && styles.variantButtonDisabled]}
+                  onPress={() => handleSwitchVariant('easier')}
+                  disabled={!canGoEasier}
+                >
+                  <Text style={styles.variantButtonText}>Easier</Text>
+                </TouchableOpacity>
+                <Text style={styles.variantLabel}>
+                  {variants.length > 1
+                    ? `Variant ${Math.max(currentVariantIndex + 1, 1)}/${variants.length}`
+                    : 'Variant linked'}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.variantButton, !canGoHarder && styles.variantButtonDisabled]}
+                  onPress={() => handleSwitchVariant('harder')}
+                  disabled={!canGoHarder}
+                >
+                  <Text style={styles.variantButtonText}>Harder</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text style={styles.variantUnavailable}>No easier/harder variant for this exercise</Text>
+            )}
           </View>
 
-          {/* Done Button */}
-          <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-            <Text style={styles.doneButtonText}>Done</Text>
-          </TouchableOpacity>
+          {isTimeBasedSet ? (
+            <View style={styles.timerWrap}>
+              <CircularProgress
+                size={190}
+                strokeWidth={8}
+                progress={timerProgress}
+                color={COLORS.success}
+              >
+                <View style={styles.timerContent}>
+                  <Text style={styles.timerText}>{setSecondsRemaining ?? totalSetSeconds}</Text>
+                  <Text style={styles.timerCaption}>seconds</Text>
+                </View>
+              </CircularProgress>
+              <Text style={styles.timerHint}>Auto complete when timer reaches zero</Text>
+              {__DEV__ ? (
+                <TouchableOpacity style={styles.skipTimeButton} onPress={handleSkipTimeSet}>
+                  <Text style={styles.skipTimeButtonText}>Skip</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Progress */}
@@ -179,7 +333,9 @@ export default function SessionScreen({ workout, onComplete, onExit }: Props) {
     if (nextAction === 'NEXT_EXERCISE') {
       const nextBlock = workout.exerciseBlocks[state.currentExerciseIndex + 1];
       if (nextBlock) {
-        const nextEx = getCachedExerciseById(nextBlock.exerciseId);
+        const nextExerciseId =
+          variantByExerciseIndex[state.currentExerciseIndex + 1] || nextBlock.exerciseId;
+        const nextEx = getCachedExerciseById(nextExerciseId);
         nextExerciseName = nextEx?.name || '';
       }
     } else {
@@ -305,6 +461,73 @@ const styles = StyleSheet.create({
   repInfo: {
     fontSize: FONTS.bodyLarge,
     color: COLORS.primary,
+    fontWeight: '600',
+  },
+  variantControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    gap: SPACING.sm,
+  },
+  variantButton: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+  },
+  variantButtonDisabled: {
+    opacity: 0.45,
+  },
+  variantButtonText: {
+    color: COLORS.text,
+    fontSize: FONTS.bodySmall,
+    fontWeight: '600',
+  },
+  variantLabel: {
+    color: COLORS.textSecondary,
+    fontSize: FONTS.caption,
+    minWidth: 80,
+    textAlign: 'center',
+  },
+  variantUnavailable: {
+    marginTop: SPACING.sm,
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+  },
+  timerWrap: {
+    alignItems: 'center',
+    marginVertical: SPACING.md,
+  },
+  timerContent: {
+    alignItems: 'center',
+  },
+  timerText: {
+    fontSize: FONTS.timer,
+    fontWeight: '800',
+    color: COLORS.success,
+  },
+  timerCaption: {
+    fontSize: FONTS.bodySmall,
+    color: COLORS.textSecondary,
+  },
+  timerHint: {
+    fontSize: FONTS.caption,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+  },
+  skipTimeButton: {
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: RADIUS.md,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+  },
+  skipTimeButtonText: {
+    fontSize: FONTS.bodyLarge,
+    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   doneButton: {

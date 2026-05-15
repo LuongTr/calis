@@ -3,7 +3,30 @@ import { Exercise } from '../types';
 export const EXERCISES: Exercise[] = [
   // ===== PUSH =====
   {
+    id: 'wall-pushup',
+    familyId: 'pushup',
+    difficultyRank: 0,
+    progressionExerciseId: 'incline-pushup',
+    name: 'Wall Push-up',
+    type: 'calis',
+    muscleGroup: 'push',
+    level: 'beginner',
+    format: 'reps',
+    defaultReps: 12,
+    defaultSets: 3,
+    restTimeSec: 45,
+    videoId: 'YB0egDzsu18',
+    shortDescription: 'Standing push-up against a wall for first-step pressing strength.',
+    tips: ['Keep body straight', 'Hands slightly wider than shoulders', 'Control down and up'],
+    commonMistakes: ['Standing too close to wall', 'Bending at hips', 'Rushing reps'],
+    tags: ['push', 'strength', 'beginner', 'main', 'no_equipment', 'regression'],
+  },
+  {
     id: 'knee-pushup',
+    familyId: 'pushup',
+    difficultyRank: 2,
+    progressionExerciseId: 'pushup',
+    regressionExerciseId: 'incline-pushup',
     name: 'Knee Push-up',
     type: 'calis',
     muscleGroup: 'push',
@@ -20,6 +43,10 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'pushup',
+    familyId: 'pushup',
+    difficultyRank: 3,
+    progressionExerciseId: 'pike-pushup',
+    regressionExerciseId: 'knee-pushup',
     name: 'Push-up',
     type: 'calis',
     muscleGroup: 'push',
@@ -38,6 +65,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'incline-pushup',
+    familyId: 'pushup',
+    difficultyRank: 1,
+    progressionExerciseId: 'knee-pushup',
     name: 'Incline Push-up',
     type: 'calis',
     muscleGroup: 'push',
@@ -54,6 +84,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'pike-pushup',
+    familyId: 'pushup',
+    difficultyRank: 4,
+    regressionExerciseId: 'pushup',
     name: 'Pike Push-up',
     type: 'calis',
     muscleGroup: 'push',
@@ -68,10 +101,33 @@ export const EXERCISES: Exercise[] = [
     commonMistakes: ['Bending knees', 'Lowering too fast', 'Not going high enough on toes'],
     tags: ['push', 'strength', 'intermediate', 'shoulder', 'main', 'no_equipment'],
   },
+  {
+    id: 'decline-pushup',
+    familyId: 'pushup',
+    difficultyRank: 5,
+    regressionExerciseId: 'pike-pushup',
+    name: 'Decline Push-up',
+    type: 'calis',
+    muscleGroup: 'push',
+    level: 'advanced',
+    format: 'reps',
+    defaultReps: 8,
+    defaultSets: 3,
+    restTimeSec: 90,
+    videoId: '9wYQ9kVv4WQ',
+    shortDescription: 'Feet-elevated push-up to increase upper-body loading.',
+    tips: ['Feet on stable surface', 'Keep core tight', 'Lower chest with control'],
+    commonMistakes: ['Sagging hips', 'Too high elevation too early', 'Short range'],
+    tags: ['push', 'strength', 'advanced', 'main', 'no_equipment'],
+  },
 
   // ===== PULL =====
   {
     id: 'assisted-pullup',
+    familyId: 'vertical-pull',
+    difficultyRank: 2,
+    progressionExerciseId: 'pullup',
+    regressionExerciseId: 'dead-hang',
     name: 'Assisted Pull-up',
     type: 'calis',
     muscleGroup: 'pull',
@@ -88,6 +144,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'pullup',
+    familyId: 'vertical-pull',
+    difficultyRank: 3,
+    regressionExerciseId: 'assisted-pullup',
     name: 'Pull-up',
     type: 'calis',
     muscleGroup: 'pull',
@@ -103,7 +162,29 @@ export const EXERCISES: Exercise[] = [
     tags: ['pull', 'strength', 'intermediate', 'main', 'pullup_bar'],
   },
   {
+    id: 'chin-up',
+    familyId: 'vertical-pull',
+    difficultyRank: 4,
+    regressionExerciseId: 'pullup',
+    name: 'Chin-up',
+    type: 'calis',
+    muscleGroup: 'pull',
+    level: 'advanced',
+    format: 'reps',
+    defaultReps: 5,
+    defaultSets: 3,
+    restTimeSec: 90,
+    videoId: 'brhRXlOhsAM',
+    shortDescription: 'Supinated-grip vertical pull emphasizing biceps and lats.',
+    tips: ['Start from dead hang', 'Drive elbows down', 'Control lowering phase'],
+    commonMistakes: ['Half reps', 'Swinging legs', 'Neck jutting forward'],
+    tags: ['pull', 'strength', 'advanced', 'main', 'pullup_bar'],
+  },
+  {
     id: 'inverted-row',
+    familyId: 'horizontal-pull',
+    difficultyRank: 2,
+    progressionExerciseId: 'pullup',
     name: 'Inverted Row',
     type: 'calis',
     muscleGroup: 'pull',
@@ -120,6 +201,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'dead-hang',
+    familyId: 'vertical-pull',
+    difficultyRank: 1,
+    progressionExerciseId: 'assisted-pullup',
     name: 'Dead Hang',
     type: 'calis',
     muscleGroup: 'pull',
@@ -137,7 +221,29 @@ export const EXERCISES: Exercise[] = [
 
   // ===== LEGS =====
   {
+    id: 'box-squat',
+    familyId: 'squat-pattern',
+    difficultyRank: 0,
+    progressionExerciseId: 'squat',
+    name: 'Box Squat',
+    type: 'calis',
+    muscleGroup: 'legs',
+    level: 'beginner',
+    format: 'reps',
+    defaultReps: 10,
+    defaultSets: 3,
+    restTimeSec: 60,
+    videoId: 'TnH6Hk8PjP4',
+    shortDescription: 'Sit-to-stand squat variation using a chair or box.',
+    tips: ['Tap the box lightly', 'Keep chest lifted', 'Drive through whole foot'],
+    commonMistakes: ['Dropping onto box', 'Knees collapsing inward', 'Losing balance'],
+    tags: ['legs', 'strength', 'beginner', 'main', 'no_equipment', 'regression'],
+  },
+  {
     id: 'squat',
+    familyId: 'squat-pattern',
+    difficultyRank: 1,
+    progressionExerciseId: 'lunge',
     name: 'Squat',
     type: 'calis',
     muscleGroup: 'legs',
@@ -154,6 +260,10 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'lunge',
+    familyId: 'squat-pattern',
+    difficultyRank: 2,
+    progressionExerciseId: 'bulgarian-split-squat',
+    regressionExerciseId: 'squat',
     name: 'Lunge',
     type: 'calis',
     muscleGroup: 'legs',
@@ -170,6 +280,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'bulgarian-split-squat',
+    familyId: 'squat-pattern',
+    difficultyRank: 3,
+    regressionExerciseId: 'lunge',
     name: 'Bulgarian Split Squat',
     type: 'calis',
     muscleGroup: 'legs',
@@ -186,6 +299,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'calf-raise',
+    familyId: 'calf',
+    difficultyRank: 1,
     name: 'Calf Raise',
     type: 'calis',
     muscleGroup: 'legs',
@@ -204,6 +319,10 @@ export const EXERCISES: Exercise[] = [
   // ===== CORE =====
   {
     id: 'plank',
+    familyId: 'core-hold',
+    difficultyRank: 2,
+    progressionExerciseId: 'leg-raise',
+    regressionExerciseId: 'dead-bug',
     name: 'Plank',
     type: 'calis',
     muscleGroup: 'core',
@@ -219,7 +338,49 @@ export const EXERCISES: Exercise[] = [
     tags: ['core', 'endurance', 'beginner', 'main', 'no_equipment'],
   },
   {
+    id: 'side-plank',
+    familyId: 'core-hold',
+    difficultyRank: 2,
+    progressionExerciseId: 'hollow-hold',
+    regressionExerciseId: 'dead-bug',
+    name: 'Side Plank',
+    type: 'calis',
+    muscleGroup: 'core',
+    level: 'intermediate',
+    format: 'time',
+    defaultTimeSec: 25,
+    defaultSets: 2,
+    restTimeSec: 45,
+    videoId: 'K2VljzCC16g',
+    shortDescription: 'Lateral core stability hold on one forearm.',
+    tips: ['Keep body in straight line', 'Stack shoulders and hips', 'Brace obliques'],
+    commonMistakes: ['Dropping hips', 'Twisting torso', 'Holding breath'],
+    tags: ['core', 'stability', 'intermediate', 'main', 'no_equipment'],
+  },
+  {
+    id: 'hollow-hold',
+    familyId: 'core-hold',
+    difficultyRank: 4,
+    regressionExerciseId: 'leg-raise',
+    name: 'Hollow Hold',
+    type: 'calis',
+    muscleGroup: 'core',
+    level: 'advanced',
+    format: 'time',
+    defaultTimeSec: 20,
+    defaultSets: 3,
+    restTimeSec: 60,
+    videoId: 'LlDNef_Ztsc',
+    shortDescription: 'Full-body hollow position hold for advanced core tension.',
+    tips: ['Lower back on floor', 'Reach long through arms and legs', 'Maintain shallow breathing'],
+    commonMistakes: ['Arching lower back', 'Neck strain', 'Bending knees excessively'],
+    tags: ['core', 'strength', 'advanced', 'main', 'no_equipment'],
+  },
+  {
     id: 'dead-bug',
+    familyId: 'core-hold',
+    difficultyRank: 1,
+    progressionExerciseId: 'plank',
     name: 'Dead Bug',
     type: 'calis',
     muscleGroup: 'core',
@@ -236,6 +397,9 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'leg-raise',
+    familyId: 'core-hold',
+    difficultyRank: 3,
+    regressionExerciseId: 'plank',
     name: 'Leg Raise',
     type: 'calis',
     muscleGroup: 'core',
@@ -254,6 +418,8 @@ export const EXERCISES: Exercise[] = [
   // ===== FULL BODY / WARM-UP =====
   {
     id: 'jumping-jacks',
+    familyId: 'warmup-cardio',
+    difficultyRank: 1,
     name: 'Jumping Jacks',
     type: 'calis',
     muscleGroup: 'full',
@@ -270,6 +436,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'arm-circles',
+    familyId: 'shoulder-mobility',
+    difficultyRank: 1,
     name: 'Arm Circles',
     type: 'calis',
     muscleGroup: 'full',
@@ -288,6 +456,8 @@ export const EXERCISES: Exercise[] = [
   // ===== MOBILITY =====
   {
     id: 'cat-cow',
+    familyId: 'spine-mobility',
+    difficultyRank: 1,
     name: 'Cat-Cow',
     type: 'mobility',
     muscleGroup: 'core',
@@ -304,6 +474,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'childs-pose',
+    familyId: 'spine-mobility',
+    difficultyRank: 1,
     name: "Child's Pose",
     type: 'mobility',
     muscleGroup: 'full',
@@ -320,6 +492,8 @@ export const EXERCISES: Exercise[] = [
   },
   {
     id: 'hamstring-stretch',
+    familyId: 'hamstring-mobility',
+    difficultyRank: 1,
     name: 'Hamstring Stretch',
     type: 'mobility',
     muscleGroup: 'legs',
@@ -350,4 +524,28 @@ export function getExercisesByMuscleGroup(group: string): Exercise[] {
 
 export function getExercisesByType(type: string): Exercise[] {
   return EXERCISES.filter((e) => e.type === type);
+}
+
+export function getExerciseVariants(exerciseId: string): Exercise[] {
+  const exercise = getExerciseById(exerciseId);
+  if (!exercise) return [];
+  const familyId = exercise.familyId;
+  if (!familyId) return [exercise];
+
+  return EXERCISES
+    .filter((item) => item.familyId === familyId)
+    .sort((a, b) => (a.difficultyRank ?? 0) - (b.difficultyRank ?? 0));
+}
+
+export function getAdjacentVariant(
+  exerciseId: string,
+  direction: 'easier' | 'harder'
+): Exercise | null {
+  const variants = getExerciseVariants(exerciseId);
+  const index = variants.findIndex((item) => item.id === exerciseId);
+  if (index < 0) return null;
+
+  const targetIndex = direction === 'easier' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= variants.length) return null;
+  return variants[targetIndex];
 }

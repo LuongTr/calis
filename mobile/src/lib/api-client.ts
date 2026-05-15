@@ -1,9 +1,20 @@
 import { getAuthToken } from './storage';
 
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL?.trim() || '';
+const strictModeRaw = process.env.EXPO_PUBLIC_BACKEND_STRICT_MODE?.trim().toLowerCase();
 
 export function isApiConfigured(): boolean {
   return apiBaseUrl.length > 0;
+}
+
+export function isBackendStrictMode(): boolean {
+  if (!isApiConfigured()) {
+    return false;
+  }
+  if (!strictModeRaw) {
+    return true;
+  }
+  return strictModeRaw !== 'false';
 }
 
 interface RequestOptions extends RequestInit {

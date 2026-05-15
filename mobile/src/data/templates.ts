@@ -3,6 +3,20 @@ import { WorkoutTemplate } from '../types';
 export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
   // ===== BEGINNER: FULL BODY =====
   {
+    id: 'beginner-fullbody-8',
+    title: 'Full Body 8 min',
+    level: 'beginner',
+    type: 'full_body',
+    durationMin: 8,
+    goalTags: ['full_body', 'beginner', 'quick'],
+    exerciseBlocks: [
+      { exerciseId: 'jumping-jacks', sets: 1, timeSec: 30, restTimeSec: 20, order: 0 },
+      { exerciseId: 'wall-pushup', sets: 2, reps: 10, restTimeSec: 45, order: 1 },
+      { exerciseId: 'box-squat', sets: 2, reps: 10, restTimeSec: 45, order: 2 },
+      { exerciseId: 'dead-bug', sets: 2, reps: 6, restTimeSec: 30, order: 3 },
+    ],
+  },
+  {
     id: 'beginner-fullbody-10',
     title: 'Full Body 10 min',
     level: 'beginner',
@@ -15,6 +29,21 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       { exerciseId: 'squat', sets: 2, reps: 10, restTimeSec: 45, order: 2 },
       { exerciseId: 'inverted-row', sets: 2, reps: 6, restTimeSec: 45, order: 3 },
       { exerciseId: 'plank', sets: 2, timeSec: 20, restTimeSec: 30, order: 4 },
+    ],
+  },
+  {
+    id: 'beginner-fullbody-12',
+    title: 'Full Body 12 min',
+    level: 'beginner',
+    type: 'full_body',
+    durationMin: 12,
+    goalTags: ['full_body', 'beginner', 'standard'],
+    exerciseBlocks: [
+      { exerciseId: 'jumping-jacks', sets: 2, timeSec: 30, restTimeSec: 20, order: 0 },
+      { exerciseId: 'incline-pushup', sets: 3, reps: 10, restTimeSec: 60, order: 1 },
+      { exerciseId: 'squat', sets: 3, reps: 12, restTimeSec: 45, order: 2 },
+      { exerciseId: 'inverted-row', sets: 2, reps: 8, restTimeSec: 60, order: 3 },
+      { exerciseId: 'plank', sets: 2, timeSec: 25, restTimeSec: 30, order: 4 },
     ],
   },
   {
@@ -34,8 +63,39 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       { exerciseId: 'dead-bug', sets: 2, reps: 6, restTimeSec: 30, order: 6 },
     ],
   },
+  {
+    id: 'beginner-fullbody-18',
+    title: 'Full Body 18 min',
+    level: 'beginner',
+    type: 'full_body',
+    durationMin: 18,
+    goalTags: ['full_body', 'beginner', 'long'],
+    exerciseBlocks: [
+      { exerciseId: 'jumping-jacks', sets: 2, timeSec: 30, restTimeSec: 20, order: 0 },
+      { exerciseId: 'knee-pushup', sets: 3, reps: 10, restTimeSec: 60, order: 1 },
+      { exerciseId: 'lunge', sets: 3, reps: 8, restTimeSec: 60, order: 2 },
+      { exerciseId: 'inverted-row', sets: 3, reps: 8, restTimeSec: 60, order: 3 },
+      { exerciseId: 'plank', sets: 3, timeSec: 30, restTimeSec: 30, order: 4 },
+      { exerciseId: 'hamstring-stretch', sets: 2, timeSec: 30, restTimeSec: 10, order: 5 },
+    ],
+  },
 
   // ===== INTERMEDIATE: UPPER BODY =====
+  {
+    id: 'intermediate-upper-20',
+    title: 'Upper Body 20 min',
+    level: 'intermediate',
+    type: 'upper',
+    durationMin: 20,
+    goalTags: ['upper', 'intermediate', 'quick'],
+    exerciseBlocks: [
+      { exerciseId: 'arm-circles', sets: 2, timeSec: 20, restTimeSec: 15, order: 0 },
+      { exerciseId: 'pushup', sets: 3, reps: 10, restTimeSec: 60, order: 1 },
+      { exerciseId: 'pullup', sets: 3, reps: 4, restTimeSec: 90, order: 2 },
+      { exerciseId: 'inverted-row', sets: 3, reps: 10, restTimeSec: 60, order: 3 },
+      { exerciseId: 'dead-hang', sets: 2, timeSec: 20, restTimeSec: 45, order: 4 },
+    ],
+  },
   {
     id: 'intermediate-upper-25',
     title: 'Upper Body 25 min',
@@ -72,6 +132,21 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
 
   // ===== INTERMEDIATE: LOWER BODY =====
   {
+    id: 'intermediate-lower-20',
+    title: 'Lower Body 20 min',
+    level: 'intermediate',
+    type: 'lower',
+    durationMin: 20,
+    goalTags: ['lower', 'intermediate', 'quick'],
+    exerciseBlocks: [
+      { exerciseId: 'jumping-jacks', sets: 2, timeSec: 30, restTimeSec: 15, order: 0 },
+      { exerciseId: 'squat', sets: 3, reps: 14, restTimeSec: 60, order: 1 },
+      { exerciseId: 'lunge', sets: 3, reps: 10, restTimeSec: 60, order: 2 },
+      { exerciseId: 'calf-raise', sets: 3, reps: 15, restTimeSec: 30, order: 3 },
+      { exerciseId: 'dead-bug', sets: 2, reps: 10, restTimeSec: 30, order: 4 },
+    ],
+  },
+  {
     id: 'intermediate-lower-25',
     title: 'Lower Body 25 min',
     level: 'intermediate',
@@ -102,6 +177,23 @@ export const WORKOUT_TEMPLATES: WorkoutTemplate[] = [
       { exerciseId: 'calf-raise', sets: 4, reps: 15, restTimeSec: 30, order: 4 },
       { exerciseId: 'leg-raise', sets: 3, reps: 12, restTimeSec: 45, order: 5 },
       { exerciseId: 'dead-bug', sets: 3, reps: 10, restTimeSec: 30, order: 6 },
+    ],
+  },
+  {
+    id: 'intermediate-lower-35',
+    title: 'Lower Body 35 min',
+    level: 'intermediate',
+    type: 'lower',
+    durationMin: 35,
+    goalTags: ['lower', 'intermediate', 'long'],
+    exerciseBlocks: [
+      { exerciseId: 'jumping-jacks', sets: 2, timeSec: 30, restTimeSec: 15, order: 0 },
+      { exerciseId: 'squat', sets: 4, reps: 15, restTimeSec: 60, order: 1 },
+      { exerciseId: 'bulgarian-split-squat', sets: 4, reps: 10, restTimeSec: 90, order: 2 },
+      { exerciseId: 'lunge', sets: 4, reps: 12, restTimeSec: 60, order: 3 },
+      { exerciseId: 'calf-raise', sets: 4, reps: 18, restTimeSec: 30, order: 4 },
+      { exerciseId: 'leg-raise', sets: 4, reps: 12, restTimeSec: 45, order: 5 },
+      { exerciseId: 'hamstring-stretch', sets: 2, timeSec: 35, restTimeSec: 10, order: 6 },
     ],
   },
 

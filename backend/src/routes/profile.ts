@@ -17,7 +17,8 @@ const profilePatchSchema = z
     pushUpLevel: z.number().int().min(0).max(10).nullable().optional(),
     pullUpLevel: z.number().int().min(0).max(10).nullable().optional(),
     squatLevel: z.number().int().min(0).max(10).nullable().optional(),
-    lastWorkoutType: z.string().min(1).max(32).nullable().optional()
+    lastWorkoutType: z.string().min(1).max(32).nullable().optional(),
+    preferredVariants: z.record(z.string(), z.string()).optional()
   })
   .refine((data) => Object.keys(data).length > 0, "At least one field is required");
 
@@ -61,6 +62,7 @@ profileRouter.patch("/me", requireAuth, async (req, res, next) => {
         pullUpLevel: payload.pullUpLevel,
         squatLevel: payload.squatLevel,
         lastWorkoutType: payload.lastWorkoutType,
+        preferredVariants: payload.preferredVariants,
         updatedAt: new Date()
       })
       .where(eq(users.id, req.auth!.userId))

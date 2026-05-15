@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string;
   email: string;
   displayName: string | null;
+  preferredVariants: Record<string, string>;
   onboardingCompleted: boolean;
   level: "beginner" | "intermediate";
   trainingStyle: "full_body" | "upper_lower" | "push_pull_legs";

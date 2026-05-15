@@ -12,6 +12,7 @@ import WorkoutListScreen from './src/features/workout/WorkoutListScreen';
 import WorkoutDetailScreen from './src/features/workout/WorkoutDetailScreen';
 import SessionScreen from './src/features/session/SessionScreen';
 import ProfileScreen from './src/features/profile/ProfileScreen';
+import WorkoutHistoryScreen from './src/features/history/WorkoutHistoryScreen';
 import CustomWorkoutBuilderScreen from './src/features/workout/CustomWorkoutBuilderScreen';
 import {
   getUserProfile,
@@ -29,8 +30,9 @@ import {
   saveWorkoutHistory,
   submitOnboarding,
   syncPendingWorkoutHistory,
+  updatePreferredVariants,
 } from './src/lib/api';
-import { apiRequest, checkBackendHealth, isApiConfigured } from './src/lib/api-client';
+import { apiRequest, checkBackendHealth, isApiConfigured, isBackendStrictMode } from './src/lib/api-client';
 import {
   Exercise,
   OnboardingData,
@@ -54,6 +56,7 @@ type RootStackParamList = {
 type TabParamList = {
   Home: undefined;
   Workouts: undefined;
+  History: undefined;
   Profile: undefined;
 };
 
@@ -64,6 +67,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
     Home: 'H',
     Workouts: 'W',
+    History: 'S',
     Profile: 'P',
   };
 
@@ -191,11 +195,13 @@ function MainTabs({
           />
         )}
       </Tab.Screen>
+      <Tab.Screen name="History">
+        {() => <WorkoutHistoryScreen history={history} />}
+      </Tab.Screen>
       <Tab.Screen name="Profile">
         {({ navigation }) => (
           <ProfileScreen
             profile={profile}
-            history={history}
             onRetakeOnboarding={() => onRetakeOnboarding().then(() => {
               navigationRef.current?.reset({
                 index: 0,
@@ -240,9 +246,13 @@ function SessionWrapper({
   route,
   navigation,
   onSessionComplete,
+  preferredVariants,
+  onPersistVariant,
   workouts,
 }: NativeStackScreenProps<RootStackParamList, 'Session'> & {
   onSessionComplete: (workoutId: string) => void;
+  preferredVariants: Record<string, string>;
+  onPersistVariant: (familyId: string, exerciseId: string) => void;
   workouts: WorkoutTemplate[];
 }) {
   const workout = workouts.find((item) => item.id === route.params.workoutId);
@@ -251,6 +261,8 @@ function SessionWrapper({
   return (
     <SessionScreen
       workout={workout}
+      preferredVariants={preferredVariants}
+      onPersistVariant={onPersistVariant}
       onComplete={(id) => {
         onSessionComplete(id);
         navigation.popToTop();
@@ -273,6 +285,7 @@ export default function App() {
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const appDataRef = useRef<AppData | null>(null);
   const workoutsRef = useRef<WorkoutTemplate[]>(LOCAL_TEMPLATES);
 
   useEffect(() => {
@@ -322,8 +335,22 @@ export default function App() {
             setRecommendations(remoteRecommendations);
             return remoteRecommendations;
           }
+          if (isBackendStrictMode()) {
+            setRecommendations([]);
+            setStatusMessage(
+              'Backend recommendation payload is empty. Local recommendation fallback is disabled in strict mode.'
+            );
+            return [];
+          }
         } catch {
           setBackendStatus('offline');
+          if (isBackendStrictMode()) {
+            setRecommendations([]);
+            setStatusMessage(
+              'Backend recommendation sync is unavailable. Local recommendation fallback is disabled in strict mode.'
+            );
+            return [];
+          }
           setStatusMessage(
             'Using local recommendations because backend recommendation sync is unavailable.'
           );
@@ -345,7 +372,10 @@ export default function App() {
         exercises: [],
         templates: LOCAL_TEMPLATES,
       }));
-      const mergedTemplates = mergeWorkouts(templates, LOCAL_TEMPLATES);
+      const mergedTemplates =
+        isApiConfigured() && isBackendStrictMode()
+          ? templates
+          : mergeWorkouts(templates, LOCAL_TEMPLATES);
 
       if (cancelled) return;
 
@@ -652,6 +682,43 @@ export default function App() {
     );
   }, []);
 
+  const handlePersistVariant = useCallback(
+    (familyId: string, exerciseId: string) => {
+      if (!profile) return;
+
+      const nextPreferredVariants = {
+        ...(profile.preferredVariants || {}),
+        [familyId]: exerciseId,
+      };
+
+      if (profile.authMode === 'account' && isApiConfigured()) {
+        updatePreferredVariants(nextPreferredVariants)
+          .then(async (remoteProfile) => {
+            if (!remoteProfile) return;
+            setProfile(remoteProfile);
+            await saveUserProfile(remoteProfile);
+            setBackendStatus('connected');
+            setStatusMessage(null);
+          })
+          .catch(() => {
+            setBackendStatus('offline');
+            setStatusMessage(
+              'Could not save exercise variant preference to backend. Please retry when connection is stable.'
+            );
+          });
+        return;
+      }
+
+      const nextProfile: UserProfile = {
+        ...profile,
+        preferredVariants: nextPreferredVariants,
+      };
+      setProfile(nextProfile);
+      saveUserProfile(nextProfile).catch(() => {});
+    },
+    [profile]
+  );
+
   const authHelperMessage =
     backendStatus === 'not_configured'
       ? 'Quick Start works now. To use email signup and login, set EXPO_PUBLIC_API_URL to your backend URL.'
@@ -741,6 +808,52 @@ export default function App() {
     [authError, authHelperMessage, handleEmailLogin, handleEmailSignup, handleGuestStart]
   );
 
+  const renderOnboardingScreen = useCallback(
+    () => <OnboardingScreen onComplete={handleOnboardingComplete} />,
+    [handleOnboardingComplete]
+  );
+
+  const renderMainTabsScreen = useCallback(
+    () => {
+      const currentAppData = appDataRef.current;
+      return profile && currentAppData ? (
+        <MainTabs appData={currentAppData} navigationRef={navigationRef} />
+      ) : null;
+    },
+    [profile]
+  );
+
+  const renderWorkoutDetailScreen = useCallback(
+    (props: NativeStackScreenProps<RootStackParamList, 'WorkoutDetail'>) => (
+      <WorkoutDetailWrapper {...props} workouts={workoutsRef.current} />
+    ),
+    []
+  );
+
+  const renderSessionScreen = useCallback(
+    (props: NativeStackScreenProps<RootStackParamList, 'Session'>) => (
+      <SessionWrapper
+        {...props}
+        onSessionComplete={handleSessionComplete}
+        preferredVariants={profile?.preferredVariants || {}}
+        onPersistVariant={handlePersistVariant}
+        workouts={workoutsRef.current}
+      />
+    ),
+    [handlePersistVariant, handleSessionComplete, profile?.preferredVariants]
+  );
+
+  const renderCustomWorkoutBuilderScreen = useCallback(
+    () => (
+      <CustomWorkoutBuilderScreen
+        exercises={exercises}
+        onSave={handleCreateCustomWorkout}
+        onBack={() => navigationRef.current?.goBack()}
+      />
+    ),
+    [exercises, handleCreateCustomWorkout]
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingScreen}>
@@ -762,6 +875,7 @@ export default function App() {
     onLogout: handleLogout,
     onCreateAccount: handleCreateAccount,
   };
+  appDataRef.current = appData;
 
   return (
     <NavigationContainer ref={navigationRef}>
@@ -771,33 +885,12 @@ export default function App() {
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <RootStack.Screen name="Auth">{renderAuthScreen}</RootStack.Screen>
-
-        <RootStack.Screen name="Onboarding">
-          {() => <OnboardingScreen onComplete={handleOnboardingComplete} />}
-        </RootStack.Screen>
-
-        <RootStack.Screen name="MainTabs">
-          {() => (profile ? <MainTabs appData={appData} navigationRef={navigationRef} /> : null)}
-        </RootStack.Screen>
-
-        <RootStack.Screen name="WorkoutDetail">
-          {(props: any) => <WorkoutDetailWrapper {...props} workouts={workouts} />}
-        </RootStack.Screen>
-
-        <RootStack.Screen name="Session">
-          {(props: any) => (
-            <SessionWrapper {...props} onSessionComplete={handleSessionComplete} workouts={workouts} />
-          )}
-        </RootStack.Screen>
-
+        <RootStack.Screen name="Onboarding">{renderOnboardingScreen}</RootStack.Screen>
+        <RootStack.Screen name="MainTabs">{renderMainTabsScreen}</RootStack.Screen>
+        <RootStack.Screen name="WorkoutDetail">{renderWorkoutDetailScreen}</RootStack.Screen>
+        <RootStack.Screen name="Session">{renderSessionScreen}</RootStack.Screen>
         <RootStack.Screen name="CustomWorkoutBuilder">
-          {() => (
-            <CustomWorkoutBuilderScreen
-              exercises={exercises}
-              onSave={handleCreateCustomWorkout}
-              onBack={() => navigationRef.current?.goBack()}
-            />
-          )}
+          {renderCustomWorkoutBuilderScreen}
         </RootStack.Screen>
       </RootStack.Navigator>
     </NavigationContainer>

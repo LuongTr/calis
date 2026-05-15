@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { db, sql } from "./index.js";
 import { exercises, workoutTemplates } from "./schema.js";
+import { sql as drizzleSql } from "drizzle-orm";
 import { parseCsv, parsePgTextArray } from "../lib/csv.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +45,34 @@ async function seedExercises(seedDir: string): Promise<void> {
   });
 
   if (entries.length > 0) {
-    await db.insert(exercises).values(entries).onConflictDoNothing();
+    await db
+      .insert(exercises)
+      .values(entries)
+      .onConflictDoUpdate({
+        target: exercises.id,
+        set: {
+          name: drizzleSql`excluded.name`,
+          familyId: drizzleSql`excluded.family_id`,
+          difficultyRank: drizzleSql`excluded.difficulty_rank`,
+          progressionExerciseId: drizzleSql`excluded.progression_exercise_id`,
+          regressionExerciseId: drizzleSql`excluded.regression_exercise_id`,
+          type: drizzleSql`excluded.type`,
+          muscleGroup: drizzleSql`excluded.muscle_group`,
+          level: drizzleSql`excluded.level`,
+          format: drizzleSql`excluded.format`,
+          defaultReps: drizzleSql`excluded.default_reps`,
+          defaultTimeSec: drizzleSql`excluded.default_time_sec`,
+          defaultSets: drizzleSql`excluded.default_sets`,
+          restTimeSec: drizzleSql`excluded.rest_time_sec`,
+          videoId: drizzleSql`excluded.video_id`,
+          videoStartSec: drizzleSql`excluded.video_start_sec`,
+          videoEndSec: drizzleSql`excluded.video_end_sec`,
+          shortDescription: drizzleSql`excluded.short_description`,
+          tips: drizzleSql`excluded.tips`,
+          commonMistakes: drizzleSql`excluded.common_mistakes`,
+          tags: drizzleSql`excluded.tags`
+        }
+      });
   }
 }
 
@@ -69,7 +97,20 @@ async function seedTemplates(seedDir: string): Promise<void> {
   });
 
   if (entries.length > 0) {
-    await db.insert(workoutTemplates).values(entries).onConflictDoNothing();
+    await db
+      .insert(workoutTemplates)
+      .values(entries)
+      .onConflictDoUpdate({
+        target: workoutTemplates.id,
+        set: {
+          title: drizzleSql`excluded.title`,
+          level: drizzleSql`excluded.level`,
+          type: drizzleSql`excluded.type`,
+          durationMin: drizzleSql`excluded.duration_min`,
+          goalTags: drizzleSql`excluded.goal_tags`,
+          exerciseBlocks: drizzleSql`excluded.exercise_blocks`
+        }
+      });
   }
 }
 

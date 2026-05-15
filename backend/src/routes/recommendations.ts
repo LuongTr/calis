@@ -2,6 +2,7 @@ import { Router } from "express";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { users, workoutHistory, workoutTemplates } from "../db/schema.js";
+import { CONTENT_VERSION } from "../lib/content.js";
 import { buildTodayRecommendations } from "../lib/recommendations.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -43,7 +44,7 @@ recommendationsRouter.get("/recommendations/today", requireAuth, async (req, res
       count: recommendations.length
     });
 
-    res.json({ recommendations });
+    res.json({ contentVersion: CONTENT_VERSION, recommendations });
   } catch (error) {
     next(error);
   }

@@ -1,11 +1,5 @@
-import { SessionState, SessionEvent, WorkoutTemplate } from '../../types';
 import { REST_CONFIG } from '../../constants/theme';
-
-// ============================================================
-// Session State Machine
-// Deterministic reducer-based state machine
-// States: idle → active_set → rest → transition → ... → complete
-// ============================================================
+import { SessionEvent, SessionState, WorkoutTemplate } from '../../types';
 
 export function createInitialSessionState(workout: WorkoutTemplate): SessionState {
   const totalSets = workout.exerciseBlocks.reduce((sum, block) => sum + block.sets, 0);
@@ -31,39 +25,38 @@ export function sessionReducer(state: SessionState, event: SessionEvent): Sessio
 
     case 'DONE': {
       if (state.status !== 'active_set') return state;
-      // Enter transition to compute next indexes/rest
-      return { ...state, status: 'transition' };
+      return {
+        ...state,
+        status: 'transition',
+        completedSets: state.completedSets + 1,
+      };
     }
 
     case 'TIMER_DONE': {
       if (state.status !== 'rest') return state;
-      // Timer finished → go directly to active_set
       return {
         ...state,
         status: 'active_set',
-        completedSets: state.completedSets + 1,
+        restSeconds: state.defaultRestSeconds,
       };
     }
 
     case 'SKIP': {
       if (state.status !== 'rest') return state;
-      // Skip rest → go directly to active_set
       return {
         ...state,
         status: 'active_set',
         restSeconds: state.defaultRestSeconds,
-        completedSets: state.completedSets + 1,
       };
     }
 
     case 'ADJUST_REST': {
       if (state.status !== 'rest') return state;
-      const adjustment = event.payload;
-      const newRest = Math.max(
+      const nextRestSeconds = Math.max(
         REST_CONFIG.minRestSec,
-        Math.min(REST_CONFIG.maxRestSec, state.restSeconds + adjustment)
+        Math.min(REST_CONFIG.maxRestSec, state.restSeconds + event.payload)
       );
-      return { ...state, restSeconds: newRest };
+      return { ...state, restSeconds: nextRestSeconds };
     }
 
     default:
@@ -71,20 +64,11 @@ export function sessionReducer(state: SessionState, event: SessionEvent): Sessio
   }
 }
 
-/**
- * Process the transition state.
- * This is called when user taps "Done" on a set.
- * It updates exercise/set indices and routes to rest (or complete).
- */
-export function processTransition(
-  state: SessionState,
-  workout: WorkoutTemplate
-): SessionState {
+export function processTransition(state: SessionState, workout: WorkoutTemplate): SessionState {
   if (state.status !== 'transition') return state;
 
   const currentExercise = workout.exerciseBlocks[state.currentExerciseIndex];
   if (!currentExercise) {
-    // No more exercises - complete
     return { ...state, status: 'complete', nextAction: null };
   }
 
@@ -92,7 +76,6 @@ export function processTransition(
   const hasMoreExercises = state.currentExerciseIndex + 1 < workout.exerciseBlocks.length;
 
   if (hasMoreSets) {
-    // Stay on same exercise, advance set
     return {
       ...state,
       currentSetIndex: state.currentSetIndex + 1,
@@ -104,7 +87,6 @@ export function processTransition(
   }
 
   if (hasMoreExercises) {
-    // Move to next exercise, reset set index
     return {
       ...state,
       currentExerciseIndex: state.currentExerciseIndex + 1,
@@ -116,7 +98,6 @@ export function processTransition(
     };
   }
 
-  // Last set of last exercise - complete
   return {
     ...state,
     status: 'complete',

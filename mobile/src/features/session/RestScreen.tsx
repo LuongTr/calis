@@ -71,6 +71,20 @@ export default function RestScreen({
   const invertedProgress = 1 - Math.min(progress, 1);
   const nextLabel = nextAction === 'NEXT_EXERCISE' ? 'Up next' : 'Same exercise';
   const skipLabel = nextAction === 'NEXT_EXERCISE' ? 'Start next exercise' : 'Start next set';
+  const skipTone = nextAction === 'NEXT_EXERCISE' ? 'exercise' : 'set';
+  const skipButtonStyle = [
+    styles.skipButton,
+    skipTone === 'set' && styles.skipButtonSet,
+    skipTone === 'exercise' && styles.skipButtonExercise,
+    isNearlyDone && styles.skipButtonReady,
+  ];
+  const skipButtonTextStyle = [
+    styles.skipButtonText,
+    skipTone === 'set' && styles.skipButtonTextSet,
+    skipTone === 'exercise' && styles.skipButtonTextExercise,
+    isNearlyDone && styles.skipButtonTextReady,
+  ];
+
   const guidance =
     restSeconds <= 0
       ? 'Rest finished. Move when ready.'
@@ -141,10 +155,10 @@ export default function RestScreen({
 
         {/* Skip Button */}
         <TouchableOpacity
-          style={[styles.skipButton, isNearlyDone && styles.skipButtonReady]}
+          style={skipButtonStyle}
           onPress={onSkip}
         >
-          <Text style={[styles.skipButtonText, isNearlyDone && styles.skipButtonTextReady]}>
+          <Text style={skipButtonTextStyle}>
             {skipLabel}
           </Text>
         </TouchableOpacity>
@@ -234,14 +248,27 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.border,
   },
+  skipButtonSet: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
+  },
+  skipButtonExercise: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
+  },
   skipButtonReady: {
     borderColor: COLORS.restNearlyDone,
-    backgroundColor: COLORS.accent,
   },
   skipButtonText: {
     fontSize: FONTS.bodyLarge,
     color: COLORS.textSecondary,
     fontWeight: '600',
+  },
+  skipButtonTextSet: {
+    color: COLORS.white,
+  },
+  skipButtonTextExercise: {
+    color: COLORS.primary,
   },
   skipButtonTextReady: {
     color: COLORS.primary,

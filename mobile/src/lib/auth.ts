@@ -12,6 +12,7 @@ export interface BackendUser {
   id: string;
   email: string;
   displayName: string | null;
+  preferredVariants?: Record<string, string> | null;
   onboardingCompleted: boolean;
   level: 'beginner' | 'intermediate';
   trainingStyle: 'full_body' | 'upper_lower' | 'push_pull_legs';
@@ -61,6 +62,7 @@ export function mapBackendUserToProfile(user: BackendUser): UserProfile {
     authMode: 'account',
     email: user.email,
     displayName: normalizedDisplayName,
+    preferredVariants: user.preferredVariants || {},
     onboardingCompleted: user.onboardingCompleted,
     onboardingData,
     lastWorkoutDate: user.lastWorkoutDate || undefined,
